@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quad_feedback_linearization"
+version = "0.0.1"
+description = "low level feedback linearization with integral action for quad control"
+authors = [
+    { name = "John Viljoen", email = "johnviljoen2@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = ["quadcopter", "nonlinear control"]
+
+dependencies = [
+    "matplotlib",
+    "tqdm",
+    "sympy"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+
