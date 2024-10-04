@@ -5,6 +5,7 @@ quad_params = {
     "mB": 1.2, # mass (kg)
     "dxm": 0.16, # arm length (m)
     "dym": 0.16, # arm length (m)
+    "dzm": 0.01, # arm height (m)
     "IB": np.array([[0.0123, 0,      0     ],
                     [0,      0.0123, 0     ],
                     [0,      0,      0.0224]]), # Inertial tensor (kg*m^2)
@@ -24,10 +25,18 @@ quad_params = {
 }
 
 # post init useful parameters for quad
-quad_params["mixerFM"] = np.array([
+quad_params["B0"] = np.array([
     [quad_params["kTh"], quad_params["kTh"], quad_params["kTh"], quad_params["kTh"]],
     [quad_params["dym"]*quad_params["kTh"], -quad_params["dym"]*quad_params["kTh"], -quad_params["dym"]*quad_params["kTh"], quad_params["dym"]*quad_params["kTh"]],
     [quad_params["dxm"]*quad_params["kTh"], quad_params["dxm"]*quad_params["kTh"], -quad_params["dxm"]*quad_params["kTh"], -quad_params["dxm"]*quad_params["kTh"]],
-    [-quad_params["kTo"], quad_params["kTo"], -quad_params["kTo"], quad_params["kTo"]]])
+    [-quad_params["kTo"], quad_params["kTo"], -quad_params["kTo"], quad_params["kTo"]]]) # actuation matrix
 
+quad_params["x_lb"] = np.array([
+    *[-10]*3, *[-np.inf]*4, *[-10]*3, *[-10]*3, *[quad_params["minWmotor"]]*4
+    # xyz       q0123         xdydzd    pdqdrd    w0123
+])
 
+quad_params["x_ub"] = np.array([
+    *[10]*3, *[np.inf]*4, *[10]*3, *[10]*3, *[quad_params["maxWmotor"]]*4
+    # xyz      q0123        xdydzd   pdqdrd   w0123
+])
