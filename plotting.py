@@ -85,14 +85,14 @@ class Animator:
         xk = self.x[k]
 
         q_0k = np.array([
-             self.x[0:k+1,3],
-            -self.x[0:k+1,4],
-            -self.x[0:k+1,5],
-             self.x[0:k+1,6]
+            self.x[0:k+1,3],
+            self.x[0:k+1,4],
+            self.x[0:k+1,5],
+            self.x[0:k+1,6]
         ])
         qk = q_0k[:,-1]
 
-        R = geometry.quaternion_to_dcm(qk)
+        R = geometry.quaternion_to_rotation_matrix(qk)
 
         motor_points = R @ np.array([
             [self.p["dxm"], -self.p["dym"], self.p["dzm"]], 

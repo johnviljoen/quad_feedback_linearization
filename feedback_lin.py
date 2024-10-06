@@ -2,22 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+import geometry
 from params import quad_params as qp
 from dynamics import f
 from plotting import Animator
-
-# Helper functions
-def quaternion_to_rotation_matrix(q):
-    """
-    Convert a quaternion into a rotation matrix.
-    """
-    q0, q1, q2, q3 = q
-    R = np.array([
-        [1 - 2*(q2**2 + q3**2),     2*(q1*q2 - q0*q3),     2*(q1*q3 + q0*q2)],
-        [    2*(q1*q2 + q0*q3), 1 - 2*(q1**2 + q3**2),     2*(q2*q3 - q0*q1)],
-        [    2*(q1*q3 - q0*q2),     2*(q2*q3 + q0*q1), 1 - 2*(q1**2 + q2**2)]
-    ])
-    return R
 
 def vee_map(S):
     """
@@ -42,8 +30,8 @@ K_omega = 0.1 * np.eye(3)          # Angular velocity control gain
 xk = np.array([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, *[522.9847140714692]*4])
 rk = np.copy(xk)
 
-# Simulation parameters
-Ti, Tf, Ts = 0.0, 10.0, 0.001
+# Simulation parameters - Ts = 0.03 is maximum for stability here
+Ti, Tf, Ts = 0.0, 30.0, 0.03
 t = np.arange(Ti, Tf, Ts)
 x = [np.copy(xk)]
 r = [np.copy(rk)]
@@ -52,21 +40,29 @@ r = [np.copy(rk)]
 tilde_p_integral = np.zeros(3)
 
 for tk in tqdm(t):
-    # Update desired trajectory (circular motion)
-    # p_d = np.array([np.sin(tk), np.cos(tk), 0])
-    # dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
-    # ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
 
-    # up and down motion only
-    hz = 1
-    p_d = np.array([0,0,-np.sin(tk * hz)])
-    dp_d = np.array([0,0,-np.cos(tk * hz)])
-    ddp_d = np.array([0,0,np.sin(tk * hz)])
+    # Desired Trajectory:
+    # -------------------
+
+    # cicular
+    p_d = np.array([np.sin(tk), np.cos(tk), 0])
+    dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
+    ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
+
+    # up and down
+    # hz = 1
+    # p_d = np.array([0,0,-np.sin(tk * hz)])
+    # dp_d = np.array([0,0,-np.cos(tk * hz)])
+    # ddp_d = np.array([0,0,np.sin(tk * hz)])
 
     # stand still
     # p_d = np.array([0,0,0])
     # dp_d = np.array([0,0,0])
     # ddp_d = np.array([0,0,0])
+
+    # unpacking
+    # ---------
+
     rk[0:3] = p_d  # Desired position
 
     # Extract current state
@@ -74,6 +70,9 @@ for tk in tqdm(t):
     q = xk[3:7]         # Quaternion
     v = xk[7:10]        # Velocity
     omega = xk[10:13]   # Angular velocity
+
+    # Calculate desired f_d via feedback lin (https://ieeexplore.ieee.org/document/9196800/)
+    # --------------------------------------
 
     # Compute position tracking error and its integral
     tilde_p = p - p_d
@@ -92,15 +91,20 @@ for tk in tqdm(t):
     # Compute desired total force
     f_d = m * dv_r - K @ s - m * np.array([0, 0, -g]) - hat_f_a
 
+    # Calculate desired rotation matrix to achieve f_d
+    # ------------------------------------------------
+
     # because we use this desired force to calculate the desired angle - if it is close to zero we have a 
     # badly defined problem. For that reason we have some control flow here to handle that edge case
     if np.linalg.norm(f_d) < qp["minThr"]:
+
         print('min thrust regime engaged')
         # Set desired orientation to whatever its currently at
-        R_d = quaternion_to_rotation_matrix(q)
+        R_d = geometry.quaternion_to_rotation_matrix(q)
         T_d = qp["minThr"]
 
     else:
+
         # Compute desired thrust magnitude
         T_d = np.linalg.norm(f_d)
 
@@ -119,8 +123,11 @@ for tk in tqdm(t):
         # Assemble desired rotation matrix
         R_d = np.column_stack((b1_d, b2_d, b3_d))
 
+    # Get attitude error - calculate desired torques - get final control
+    # ------------------------------------------------------------------
+
     # Convert current quaternion to rotation matrix
-    R = quaternion_to_rotation_matrix(q)
+    R = geometry.quaternion_to_rotation_matrix(q)
 
     # Compute attitude error
     e_R_matrix = 0.5 * (R_d.T @ R - R.T @ R_d)
@@ -142,16 +149,16 @@ for tk in tqdm(t):
     uk = np.clip(uk, qp["minWmotor"]**2, qp["maxWmotor"]**2)
     uk = np.sqrt(uk)
 
-    # Ensure rotor speeds are non-negative
-
     # Step the system
-    xk += f(qp, xk, uk) * Ts
+    # ---------------
+
+    xk += f(qp, xk, uk, Ts=Ts) * Ts
 
     # Clip the rotor speeds within limits
     xk[13:17] = np.clip(xk[13:17], qp["x_lb"][13:17], qp["x_ub"][13:17])
 
-    # print(tilde_p)
-    # print(T_d)
+    # save
+    # ----
 
     x.append(np.copy(xk))
     r.append(np.copy(rk))
