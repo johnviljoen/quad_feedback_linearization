@@ -43,7 +43,7 @@ xk = np.array([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, *[522.9847140714692]*4])
 rk = np.copy(xk)
 
 # Simulation parameters
-Ti, Tf, Ts = 0.0, 1.0, 0.001
+Ti, Tf, Ts = 0.0, 10.0, 0.001
 t = np.arange(Ti, Tf, Ts)
 x = [np.copy(xk)]
 r = [np.copy(rk)]
@@ -53,15 +53,15 @@ tilde_p_integral = np.zeros(3)
 
 for tk in tqdm(t):
     # Update desired trajectory (circular motion)
-    p_d = np.array([np.sin(tk), np.cos(tk), 0])
-    dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
-    ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
+    # p_d = np.array([np.sin(tk), np.cos(tk), 0])
+    # dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
+    # ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
 
     # up and down motion only
-    # hz = 1
-    # p_d = np.array([0,0,-np.sin(tk * hz)])
-    # dp_d = np.array([0,0,-np.cos(tk * hz)])
-    # ddp_d = np.array([0,0,np.sin(tk * hz)])
+    hz = 1
+    p_d = np.array([0,0,-np.sin(tk * hz)])
+    dp_d = np.array([0,0,-np.cos(tk * hz)])
+    ddp_d = np.array([0,0,np.sin(tk * hz)])
 
     # stand still
     # p_d = np.array([0,0,0])
@@ -77,7 +77,6 @@ for tk in tqdm(t):
 
     # Compute position tracking error and its integral
     tilde_p = p - p_d
-    tilde_p *= -1 # the x, y errors are wrong way around
     tilde_p_integral += tilde_p * Ts
 
     # Compute composite variable s
