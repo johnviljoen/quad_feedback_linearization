@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from params import quad_params as qp
 from dynamics import f
@@ -50,17 +51,22 @@ r = [np.copy(rk)]
 # Initialize integral of position error
 tilde_p_integral = np.zeros(3)
 
-for tk in t:
+for tk in tqdm(t):
     # Update desired trajectory (circular motion)
-    # p_d = np.array([np.sin(tk), np.cos(tk), 0])
-    # dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
-    # ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
+    p_d = np.array([np.sin(tk), np.cos(tk), 0])
+    dp_d = np.array([np.cos(tk), -np.sin(tk), 0])
+    ddp_d = np.array([-np.sin(tk), -np.cos(tk), 0])
 
     # up and down motion only
-    hz = 10
-    p_d = np.array([0,0,-np.sin(tk * hz)])
-    dp_d = np.array([0,0,-np.cos(tk * hz)])
-    ddp_d = np.array([0,0,np.sin(tk * hz)])
+    # hz = 1
+    # p_d = np.array([0,0,-np.sin(tk * hz)])
+    # dp_d = np.array([0,0,-np.cos(tk * hz)])
+    # ddp_d = np.array([0,0,np.sin(tk * hz)])
+
+    # stand still
+    # p_d = np.array([0,0,0])
+    # dp_d = np.array([0,0,0])
+    # ddp_d = np.array([0,0,0])
     rk[0:3] = p_d  # Desired position
 
     # Extract current state
@@ -71,6 +77,7 @@ for tk in t:
 
     # Compute position tracking error and its integral
     tilde_p = p - p_d
+    tilde_p *= -1 # the x, y errors are wrong way around
     tilde_p_integral += tilde_p * Ts
 
     # Compute composite variable s
@@ -78,7 +85,7 @@ for tk in t:
 
     # Compute reference velocity and its derivative
     v_r = dp_d - 2 * Lambda @ tilde_p - Lambda @ Lambda @ tilde_p_integral
-    dv_r = ddp_d - 2 * Lambda @ (v - dp_d) - Lambda @ Lambda @ tilde_p # UNSURE OF THIS
+    dv_r = ddp_d - 2 * Lambda @ (v - dp_d) - Lambda @ Lambda @ tilde_p
 
     # Estimate interaction forces (assuming zero for single vehicle)
     hat_f_a = np.zeros(3)
@@ -86,23 +93,32 @@ for tk in t:
     # Compute desired total force
     f_d = m * dv_r - K @ s - m * np.array([0, 0, -g]) - hat_f_a
 
-    # Compute desired thrust magnitude
-    T_d = np.linalg.norm(f_d)
+    # because we use this desired force to calculate the desired angle - if it is close to zero we have a 
+    # badly defined problem. For that reason we have some control flow here to handle that edge case
+    if np.linalg.norm(f_d) < qp["minThr"]:
+        print('min thrust regime engaged')
+        # Set desired orientation to whatever its currently at
+        R_d = quaternion_to_rotation_matrix(q)
+        T_d = qp["minThr"]
 
-    # Normalize desired force to get desired body z-axis
-    b3_d = f_d / T_d
+    else:
+        # Compute desired thrust magnitude
+        T_d = np.linalg.norm(f_d)
 
-    # Desired yaw angle (set to zero for simplicity)
-    psi_d = 0.0
-    a_yaw = np.array([np.cos(psi_d), np.sin(psi_d), 0])
+        # Normalize desired force to get desired body z-axis
+        b3_d = f_d / T_d
 
-    # Compute desired body x and y axes
-    b2_d = np.cross(b3_d, a_yaw)
-    b2_d /= np.linalg.norm(b2_d)
-    b1_d = np.cross(b2_d, b3_d)
+        # Desired yaw angle (set to zero for simplicity)
+        psi_d = 0.0
+        a_yaw = np.array([np.cos(psi_d), np.sin(psi_d), 0])
 
-    # Assemble desired rotation matrix
-    R_d = np.column_stack((b1_d, b2_d, b3_d))
+        # Compute desired body x and y axes
+        b2_d = np.cross(b3_d, a_yaw)
+        b2_d /= np.linalg.norm(b2_d)
+        b1_d = np.cross(b2_d, b3_d)
+
+        # Assemble desired rotation matrix
+        R_d = np.column_stack((b1_d, b2_d, b3_d))
 
     # Convert current quaternion to rotation matrix
     R = quaternion_to_rotation_matrix(q)
@@ -135,8 +151,8 @@ for tk in t:
     # Clip the rotor speeds within limits
     xk[13:17] = np.clip(xk[13:17], qp["x_lb"][13:17], qp["x_ub"][13:17])
 
-    print(uk)
-    print(T_d)
+    # print(tilde_p)
+    # print(T_d)
 
     x.append(np.copy(xk))
     r.append(np.copy(rk))
