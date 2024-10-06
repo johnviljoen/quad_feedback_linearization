@@ -34,9 +34,9 @@ $$
 \mathbf{f}_d^{(i)} = m \dot{\mathbf{v}}_r^{(i)} - K\mathbf{s}^{(i)} - mg - \hat{\mathbf{f}}_a^{(i)},
 $$
 
-$$
+```math
 \hat{\mathbf{f}}_a^{(i)} = \rho\left( \sum_{\mathbf{x}^{(ij)} \in \mathcal{N}(i)} \phi(\mathbf{x}^{(ij)}, \boldsymbol{\theta}_\phi, \boldsymbol{\theta}_\rho) \right).
-$$
+```
 
 Note that the position control law in (9) is decentralized, because we only consider the relative states $\mathbf{x}^{(ij)} \in \mathcal{N}(i)$ in the controller.
 
