@@ -2,6 +2,10 @@
 
 This is taken directly from ["Neural-Swarm: Decentralized Close-Proximity Multirotor Control Using Learned Interactions"](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9196800)
 
+![example result](data/gifs/circle_track_1ms.gif)
+
+![example result](data/gifs/up_down_tracking.gif)
+
 ### Single Multirotor Dynamics
 
 A single multirotor’s state comprises the global position $\mathbf{p} \in \mathbb{R}^3$, global velocity $\mathbf{v} \in \mathbb{R}^3$, attitude rotation matrix $R \in SO(3)$, and body angular velocity $\boldsymbol{\omega} \in \mathbb{R}^3$. We consider the following dynamics:
