@@ -31,7 +31,7 @@ $$
 where $\mathbf{v}_r^{(i)} = \dot{\mathbf{p}}_d^{(i)} - 2\Lambda \tilde{\mathbf{p}}^{(i)} - \Lambda^2 \int \tilde{\mathbf{p}}^{(i)} dt$ is the reference velocity. We design the total desired rotor force $\mathbf{f}_d^{(i)}$ as:
 
 $$
-\mathbf{f}_d^{(i)} = m \dot{\mathbf{v}}_r^{(i)} - K\mathbf{s}^{(i)} - mg - \hat{\mathbf{f}}_a^{(i)}, \tag{9}
+\mathbf{f}_d^{(i)} = m \dot{\mathbf{v}}_r^{(i)} - K\mathbf{s}^{(i)} - mg - \hat{\mathbf{f}}_a^{(i)},
 $$
 
 $$
