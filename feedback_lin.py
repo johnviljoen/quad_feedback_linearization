@@ -31,7 +31,7 @@ xk = np.array([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, *[522.9847140714692]*4])
 rk = np.copy(xk)
 
 # Simulation parameters - Ts = 0.03 is maximum for stability here
-Ti, Tf, Ts = 0.0, 30.0, 0.03
+Ti, Tf, Ts = 0.0, 30.0, 0.001
 t = np.arange(Ti, Tf, Ts)
 x = [np.copy(xk)]
 r = [np.copy(rk)]
@@ -78,12 +78,10 @@ for tk in tqdm(t):
     tilde_p = p - p_d
     tilde_p_integral += tilde_p * Ts
 
-    # Compute composite variable s
-    s = v + 2 * Lambda @ tilde_p + Lambda @ Lambda @ tilde_p_integral
-
-    # Compute reference velocity and its derivative
+    # Compute reference velocity and its derivative, and composite variable s
     v_r = dp_d - 2 * Lambda @ tilde_p - Lambda @ Lambda @ tilde_p_integral
     dv_r = ddp_d - 2 * Lambda @ (v - dp_d) - Lambda @ Lambda @ tilde_p
+    s = dp_d - v_r
 
     # Estimate interaction forces (assuming zero for single vehicle)
     hat_f_a = np.zeros(3)
